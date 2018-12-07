@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 import sys
 
-default_context = "0"
+default_context = "0" # specifies how many lines prior you wish to view
+# -1 prints the entire file before the difference, 0 prints nothing, and all other numbers print as many lines
+default_lines = "-n" # -n means no lines, -l means print line numbers, -s means only print line number of difference
 
-def first_diff(infile1, infile2, context = default_context):
+def first_diff(infile1, infile2, context = default_context, lines = default_lines):
 	file1 = open(infile1, "r")
 	file2 = open(infile2, "r")
 
@@ -14,37 +16,53 @@ def first_diff(infile1, infile2, context = default_context):
 	i = 0
 	while i < len(fileText1) and i < len(fileText2):
 		if fileText1[i] != fileText2[i]:
-			print_diff(infile1, infile2, fileText1,fileText2, i, int(context))
+			print_diff(infile1, infile2, fileText1,fileText2, i, int(context), lines)
 			found = True
 			break
 		i += 1
 
 	if not found:
-		print_diff(infile1, infile2, fileText1, fileText2, -i, int(context))
+		print_diff(infile1, infile2, fileText1, fileText2, -i, int(context), lines)
 
 	file1.close()
 	file2.close()
 
-def print_diff(infile1, infile2, fileText1, fileText2, line, context):
+def print_diff(infile1, infile2, fileText1, fileText2, line, context, lines):
 	if line < 0:
 		line *= -1
 		if len(fileText1) > len(fileText2):
-			print_context(fileText1, line, context)
-			print(infile1 + ":" + str(line) + " > " + fileText1[line] + "\n" + infile2 + ":exceeded length")
+			print_context(fileText1, line, context, lines)
+			if lines == "-l" or lines == "-s":
+				print(infile1 + ":" + str(line) + " > " + fileText1[line] + "\n" + infile2 + ":exceeded length")
+			else:
+				print(infile1 + ": " + fileText1[line] + "\n" + infile2 + ":exceeded length")
 		elif len(fileText1) < len(fileText2):
-			print_context(fileText1, line, context)
-			print(infile1 + ":exceeded length\n" + infile2 + ":" + str(line) + " > " + fileText2[line])
+			print_context(fileText1, line, context, lines)
+			if lines == "-l" or lines == "-s":
+				print(infile1 + ":exceeded length\n" + infile2 + ":" + str(line) + " > " + fileText2[line])
+			else:
+				print(infile1 + ":exceeded length\n" + infile2 + ": " + fileText2[line])
 	else:
-		print_context(fileText1, line, context)
-		print(infile1 + ":" + str(line) + " > " + fileText1[line])
-		print(infile2 + ":" + str(line) + " > " + fileText2[line])
+		print_context(fileText1, line, context, lines)
+		if lines == "-l" or lines == "-s":
+			print(infile1 + ":" + str(line) + " > " + fileText1[line])
+			print(infile2 + ":" + str(line) + " > " + fileText2[line])
+		else:
+			print(infile1 + ": " + fileText1[line])
+			print(infile2 + ": " + fileText2[line])
 	
-def print_context(fileText, line, context):
-	i = line - context
-	if i < 0:
+def print_context(fileText, line, context, lines):
+	if context == -1:
 		i = 0
+	else:
+		i = line - context
+		if i < 0:
+			i = 0
 	while i < line:
-		print(str(i) + " > " + fileText[i])
+		if lines == "-l":
+			print(str(i) + " > " + fileText[i])
+		else:
+			print(fileText[i])
 		i += 1
 
 def string_token(line, spliterator, mode = 's'): # mode 's' = standard, mode 'f' = full
@@ -76,5 +94,7 @@ if len(sys.argv) == 3:
 	first_diff(sys.argv[1], sys.argv[2])
 elif len(sys.argv) == 4:
 	first_diff(sys.argv[1], sys.argv[2], sys.argv[3])
+elif len(sys.argv) == 5:
+	first_diff(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
 else:
-	print("usage: ./first_diff.py <file1> <file2> <[context]>")
+	print("usage: ./first_diff.py <file1> <file2> <[context]> <[lines]>")
